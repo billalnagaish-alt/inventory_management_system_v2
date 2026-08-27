@@ -44,7 +44,7 @@ $("inventoryTable").innerHTML=data.products.map(x=>{let s=data.stock.find(y=>y.P
 $("lowStock").innerHTML=data.products.filter(x=>{let s=data.stock.find(y=>y.ProductID==x.ID);return Number(s?.CurrentStock||0)<=Number(x.MinimumStock||0)}).map(x=>{let s=data.stock.find(y=>y.ProductID==x.ID);return `<div class="low">${esc(x.Name)} — ${s?.CurrentStock||0} ${esc(x.Unit)}</div>`}).join("")||"No low-stock items";
 opts("purVendor",data.vendors,"Select Vendor");opts("purProduct",data.products,"Select Product");opts("saleCustomer",data.customers,"Select Customer");opts("saleProduct",data.products,"Select Product");
 $("purProduct").onchange=()=>{let p=data.products.find(x=>x.ID==$("purProduct").value);if(p)$("purRate").value=p.PurchasePrice||0};$("saleProduct").onchange=()=>{let p=data.products.find(x=>x.ID==$("saleProduct").value);if(p)$("saleRate").value=p.SalesPrice||0};
-$("purchaseTable").innerHTML=data.purchases.slice().reverse().map(x=>data.purchaseItems.filter(i=>i.PurchaseID===x.ID).map(i=>{let v=data.vendors.find(y=>y.ID===x.VendorID),p=data.products.find(y=>y.ID===i.ProductID);return `<tr><td>${new Date(x.Date).toLocaleDateString("en-CA")}</td><td>${esc(v?.Name)}</td><td>${esc(p?.Name)}</td><td>${i.Quantity}</td><td>${money(i.Rate)}</td><td>${money(i.Total)}</td><td>${money(x.Paid)}</td><td>${money(x.Due)}</td></tr>`}).join("")).join("");
+$("purchaseTable").innerHTML=data.purchases.slice().reverse().map(x=>data.purchaseItems.filter(i=>i.PurchaseID===x.ID).map(i=>{let v=data.vendors.find(y=>y.ID===x.VendorID),p=data.products.find(y=>y.ID===i.ProductID);return `<tr><td>${new Date(x.Date).toLocaleDateString("en-CA")}</td><td>${esc(v?.Name)}</td><td>${esc(p?.Name)}</td><td>${i.Quantity}</td><td>${money(i.Rate)}</td><td>${money(i.Total)}</td><td>${money(x.Paid)}</td><td>${money(x.Due)}</td><td><button onclick="editPurchase('${esc(x.ID)}')">✏️ Edit</button><button onclick="deletePurchase('${esc(x.ID)}')">🗑️ Delete</button></td></tr>`}).join("")).join("");
 $("salesTable").innerHTML=data.sales.slice().reverse().map(x=>data.salesItems.filter(i=>i.SaleID===x.ID).map(i=>{let c=data.customers.find(y=>y.ID===x.CustomerID),p=data.products.find(y=>y.ID===i.ProductID);return `<tr><td>${new Date(x.Date).toLocaleDateString("en-CA")}</td><td>${esc(c?.Name)}</td><td>${esc(p?.Name)}</td><td>${i.Quantity}</td><td>${money(i.Rate)}</td><td>${money(i.Total)}</td><td>${money(x.Paid)}</td><td>${money(x.Due)}</td></tr>`}).join("")).join("")}
 function renderPivot(){let f=$("fromDate").value,t=$("toDate").value,ps=data.purchases.filter(x=>!f||new Date(x.Date).toLocaleDateString("en-CA")>=f).filter(x=>!t||new Date(x.Date).toLocaleDateString("en-CA")<=t),ss=data.sales.filter(x=>!f||new Date(x.Date).toLocaleDateString("en-CA")>=f).filter(x=>!t||new Date(x.Date).toLocaleDateString("en-CA")<=t),pt=ps.reduce((a,x)=>a+Number(x.Total||0),0),st=ss.reduce((a,x)=>a+Number(x.Total||0),0);$("pivotReport").innerHTML=`<div class="cards"><div class="card">Purchase Total<div class="num">${money(pt)}</div></div><div class="card">Sales Total<div class="num">${money(st)}</div></div><div class="card">Difference<div class="num">${money(st-pt)}</div></div></div>`}
 function exportCSV(){let rows=[["Type","Date","Party","Product","Qty","Rate","Total","Paid","Due"]];data.purchases.forEach(x=>data.purchaseItems.filter(i=>i.PurchaseID===x.ID).forEach(i=>{let v=data.vendors.find(y=>y.ID===x.VendorID),p=data.products.find(y=>y.ID===i.ProductID);rows.push(["Purchase",x.Date,v?.Name||"",p?.Name||"",i.Quantity,i.Rate,i.Total,x.Paid,x.Due])}));data.sales.forEach(x=>data.salesItems.filter(i=>i.SaleID===x.ID).forEach(i=>{let c=data.customers.find(y=>y.ID===x.CustomerID),p=data.products.find(y=>y.ID===i.ProductID);rows.push(["Sales",x.Date,c?.Name||"",p?.Name||"",i.Quantity,i.Rate,i.Total,x.Paid,x.Due])}));let csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")).join("\n"),a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download="inventory-report.csv";a.click()}
@@ -192,5 +192,89 @@ async function deleteProduct(id){
 
   }catch(e){
     // Server error already shown by api()
+  }
+}
+async function editPurchase(id){
+
+  const purchase = data.purchases.find(x => String(x.ID) === String(id));
+
+  if(!purchase) return alert("Purchase পাওয়া যায়নি");
+
+  const item = data.purchaseItems.find(x =>
+    String(x.PurchaseID) === String(id)
+  );
+
+  if(!item) return alert("Purchase item পাওয়া যায়নি");
+
+  const vendorId = prompt(
+    "Vendor ID:",
+    purchase.VendorID || ""
+  );
+
+  if(vendorId === null) return;
+
+  const productId = prompt(
+    "Product ID:",
+    item.ProductID || ""
+  );
+
+  if(productId === null) return;
+
+  const qty = prompt(
+    "Quantity:",
+    item.Quantity || 0
+  );
+
+  if(qty === null) return;
+
+  const rate = prompt(
+    "Rate:",
+    item.Rate || 0
+  );
+
+  if(rate === null) return;
+
+  const paid = prompt(
+    "Paid:",
+    purchase.Paid || 0
+  );
+
+  if(paid === null) return;
+
+  if(Number(qty) <= 0){
+    return alert("Quantity অবশ্যই 0-এর বেশি হতে হবে");
+  }
+
+  await api("updatePurchase", {
+    ID: purchase.ID,
+    vendorId: vendorId,
+    productId: productId,
+    qty: Number(qty),
+    rate: Number(rate),
+    paid: Number(paid) || 0
+  });
+
+  alert("Purchase updated successfully");
+
+  await loadAll();
+}
+
+
+async function deletePurchase(id){
+
+  if(!confirm(
+    "এই Purchase Delete করতে চান?\n\nDelete করলে Stock-ও পুনরায় হিসাব হবে।"
+  )) return;
+
+  try{
+
+    await api("deletePurchase", {id});
+
+    alert("Purchase deleted successfully");
+
+    await loadAll();
+
+  }catch(e){
+    // Error already shown by api()
   }
 }
