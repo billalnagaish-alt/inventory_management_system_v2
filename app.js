@@ -1,7 +1,34 @@
 const API_URL="https://script.google.com/macros/s/AKfycbyrCXBuEMlh-nnFRgLqEiajeROCe2xChlO1Z4uMDJqMtSvp8geL1S7WQ-Jr5pwiy41u/exec";
 let data={customers:[],vendors:[],products:[],purchases:[],purchaseItems:[],sales:[],salesItems:[],payments:[],stock:[],settings:[],backupLog:[]};
 const $=id=>document.getElementById(id), money=n=>Number(n||0).toLocaleString("en-BD",{minimumFractionDigits:2,maximumFractionDigits:2}), esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-async function api(action,payload={}){try{const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,data:payload})});const j=await r.json();if(!j.success)throw Error(j.message||"Server error");return j}catch(e){$("syncStatus").textContent="Error";alert("Cloud connection error: "+e.message);throw e}}
+async function api(action,payload={}){
+  try{
+    const r=await fetch(API_URL,{
+      method:"POST",
+      headers:{
+        "Content-Type":"text/plain;charset=utf-8"
+      },
+      body:JSON.stringify({
+        action,
+        data:payload
+      }),
+      redirect:"follow"
+    });
+
+    const j=await r.json();
+
+    if(!j.success){
+      throw Error(j.message||"Server error");
+    }
+
+    return j;
+
+  }catch(e){
+    $("syncStatus").textContent="Error";
+    alert("Cloud connection error: "+e.message);
+    throw e;
+  }
+}
 async function loadAll(){try{$("syncStatus").textContent="Syncing...";const j=await api("getAll");data=j.data;renderAll();$("syncStatus").textContent="☁️ Cloud Synced"}catch(e){}}
 function opts(sel,arr,ph){$(sel).innerHTML=`<option value="">${ph}</option>`+arr.map(x=>`<option value="${esc(x.ID)}">${esc(x.Name||x.Code||x.ID)}</option>`).join("")}
 async function addCustomer(){let name=$("cName").value.trim();if(!name)return alert("Customer name দিন");await api("addCustomer",{name,phone:$("cPhone").value,address:$("cAddress").value});["cName","cPhone","cAddress"].forEach(x=>$(x).value="");loadAll()}
