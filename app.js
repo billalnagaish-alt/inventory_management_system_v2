@@ -39,7 +39,7 @@ async function addSale(){let customerId=$("saleCustomer").value,productId=$("sal
 async function backup(){let j=await api("backup",{});alert(j.message||"Backup created")}
 function renderAll(){ $("dProducts").textContent=data.products.length;$("dCustomers").textContent=data.customers.length;$("dVendors").textContent=data.vendors.length;$("dStock").textContent=data.stock.reduce((a,x)=>a+Number(x.CurrentStock||0),0);$("dPurchase").textContent=money(data.purchases.reduce((a,x)=>a+Number(x.Total||0),0));$("dSales").textContent=money(data.sales.reduce((a,x)=>a+Number(x.Total||0),0));
 $($("customerTable").innerHTML=data.customers.map(x=>`<tr><td>${esc(x.ID)}</td><td>${esc(x.Name)}</td><td>${esc(x.Phone)}</td><td>${esc(x.Address)}</td><td><button onclick="editCustomer('${esc(x.ID)}')">✏️ Edit</button><button onclick="deleteCustomer('${esc(x.ID)}')">🗑️ Delete</button></td></tr>`).join("");"customerTable").innerHTML=data.customers.map(x=>`<tr><td>${esc(x.ID)}</td><td>${esc(x.Name)}</td><td>${esc(x.Phone)}</td><td>${esc(x.Address)}</td></tr>`).join("");$("vendorTable").innerHTML=data.vendors.map(x=>`<tr><td>${esc(x.ID)}</td><td>${esc(x.Name)}</td><td>${esc(x.Phone)}</td><td>${esc(x.Address)}</td><td><button onclick="editVendor('${esc(x.ID)}')">✏️ Edit</button><button onclick="deleteVendor('${esc(x.ID)}')">🗑️ Delete</button></td></tr>`).join("");
-$("productTable").innerHTML=data.products.map(x=>{let s=data.stock.find(y=>y.ProductID==x.ID);return `<tr><td>${esc(x.Code)}</td><td>${esc(x.Name)}</td><td>${esc(x.Category)}</td><td>${esc(x.Unit)}</td><td>${money(x.PurchasePrice)}</td><td>${money(x.SalesPrice)}</td><td>${s?.CurrentStock||0}</td><td>${x.MinimumStock||0}</td></tr>`}).join("");
+$("productTable").innerHTML=data.products.map(x=>{let s=data.stock.find(y=>y.ProductID==x.ID);return `<tr><td>${esc(x.Code)}</td><td>${esc(x.Name)}</td><td>${esc(x.Category)}</td><td>${esc(x.Unit)}</td><td>${money(x.PurchasePrice)}</td><td>${money(x.SalesPrice)}</td><td>${s?.CurrentStock||0}</td><td>${x.MinimumStock||0}</td><td><button onclick="editProduct('${esc(x.ID)}')">✏️ Edit</button><button onclick="deleteProduct('${esc(x.ID)}')">🗑️ Delete</button></td></tr>`}).join("");
 $("inventoryTable").innerHTML=data.products.map(x=>{let s=data.stock.find(y=>y.ProductID==x.ID),st=Number(s?.CurrentStock||0);return `<tr><td>${esc(x.Code)}</td><td>${esc(x.Name)}</td><td>${esc(x.Unit)}</td><td>${st}</td><td>${x.MinimumStock||0}</td><td class="${st<=Number(x.MinimumStock||0)?'low':''}">${st<=Number(x.MinimumStock||0)?'LOW STOCK':'OK'}</td><td>${money(st*Number(x.PurchasePrice||0))}</td></tr>`}).join("");
 $("lowStock").innerHTML=data.products.filter(x=>{let s=data.stock.find(y=>y.ProductID==x.ID);return Number(s?.CurrentStock||0)<=Number(x.MinimumStock||0)}).map(x=>{let s=data.stock.find(y=>y.ProductID==x.ID);return `<div class="low">${esc(x.Name)} — ${s?.CurrentStock||0} ${esc(x.Unit)}</div>`}).join("")||"No low-stock items";
 opts("purVendor",data.vendors,"Select Vendor");opts("purProduct",data.products,"Select Product");opts("saleCustomer",data.customers,"Select Customer");opts("saleProduct",data.products,"Select Product");
@@ -128,4 +128,69 @@ async function editVendor(id){
   alert("Vendor updated successfully");
 
   await loadAll();
+}
+
+async function editProduct(id){
+
+  const product = data.products.find(x => String(x.ID) === String(id));
+
+  if(!product) return alert("Product পাওয়া যায়নি");
+
+  const code = prompt("Product Code:", product.Code || "");
+  if(code === null) return;
+
+  const name = prompt("Product Name:", product.Name || "");
+  if(name === null) return;
+
+  const category = prompt("Category:", product.Category || "");
+  if(category === null) return;
+
+  const unit = prompt("Unit:", product.Unit || "pcs");
+  if(unit === null) return;
+
+  const purchasePrice = prompt("Purchase Price:", product.PurchasePrice || 0);
+  if(purchasePrice === null) return;
+
+  const salesPrice = prompt("Sales Price:", product.SalesPrice || 0);
+  if(salesPrice === null) return;
+
+  const minimumStock = prompt("Minimum Stock:", product.MinimumStock || 0);
+  if(minimumStock === null) return;
+
+  if(!code.trim() || !name.trim()){
+    return alert("Product Code ও Name খালি রাখা যাবে না");
+  }
+
+  await api("updateProduct", {
+    ID: product.ID,
+    code: code.trim(),
+    name: name.trim(),
+    category: category,
+    unit: unit || "pcs",
+    purchasePrice: Number(purchasePrice) || 0,
+    salesPrice: Number(salesPrice) || 0,
+    minimumStock: Number(minimumStock) || 0
+  });
+
+  alert("Product updated successfully");
+
+  await loadAll();
+}
+
+
+async function deleteProduct(id){
+
+  if(!confirm("এই Product-টি Delete করতে চান?")) return;
+
+  try{
+
+    await api("deleteProduct", {id});
+
+    alert("Product deleted successfully");
+
+    await loadAll();
+
+  }catch(e){
+    // Server error already shown by api()
+  }
 }
