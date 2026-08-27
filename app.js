@@ -1,4 +1,4 @@
-const API_URL=https://script.google.com/macros/s/AKfycbzf-dmyNPFw7VVV6fUIi0Qap9DvdB54UIrsZVy--Ivjii0XvDelPYaC3Rjy-d4KCvE/exec
+const API_URL="https://script.google.com/macros/s/AKfycbzf-dmyNPFw7VVV6fUIi0Qap9DvdB54UIrsZVy--Ivjii0XvDelPYaC3Rjy-d4KCvE/exec";
 let data={customers:[],vendors:[],products:[],purchases:[],purchaseItems:[],sales:[],salesItems:[],payments:[],stock:[],settings:[],backupLog:[]};
 const $=id=>document.getElementById(id), money=n=>Number(n||0).toLocaleString("en-BD",{minimumFractionDigits:2,maximumFractionDigits:2}), esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 async function api(action,payload={}){
