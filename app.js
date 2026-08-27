@@ -89,3 +89,43 @@ async function editCustomer(id){
 
   await loadAll();
 }
+async function deleteVendor(id){
+  if(!confirm("এই Vendor-টি Delete করতে চান?")) return;
+
+  await api("deleteVendor", {id});
+
+  alert("Vendor deleted successfully");
+
+  await loadAll();
+}
+
+async function editVendor(id){
+
+  const vendor = data.vendors.find(x => String(x.ID) === String(id));
+
+  if(!vendor) return alert("Vendor পাওয়া যায়নি");
+
+  const name = prompt("Vendor Name:", vendor.Name || "");
+  if(name === null) return;
+
+  const phone = prompt("Phone:", vendor.Phone || "");
+  if(phone === null) return;
+
+  const address = prompt("Address:", vendor.Address || "");
+  if(address === null) return;
+
+  if(!name.trim()){
+    return alert("Vendor name খালি রাখা যাবে না");
+  }
+
+  await api("updateVendor", {
+    ID: vendor.ID,
+    name: name.trim(),
+    phone: phone,
+    address: address
+  });
+
+  alert("Vendor updated successfully");
+
+  await loadAll();
+}
