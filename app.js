@@ -278,3 +278,87 @@ async function deletePurchase(id){
     // Error already shown by api()
   }
 }
+async function editSale(id){
+
+  const sale = data.sales.find(x => String(x.ID) === String(id));
+
+  if(!sale) return alert("Sale পাওয়া যায়নি");
+
+  const item = data.salesItems.find(x =>
+    String(x.SaleID) === String(id)
+  );
+
+  if(!item) return alert("Sale item পাওয়া যায়নি");
+
+  const customerId = prompt(
+    "Customer ID:",
+    sale.CustomerID || ""
+  );
+
+  if(customerId === null) return;
+
+  const productId = prompt(
+    "Product ID:",
+    item.ProductID || ""
+  );
+
+  if(productId === null) return;
+
+  const qty = prompt(
+    "Quantity:",
+    item.Quantity || 0
+  );
+
+  if(qty === null) return;
+
+  const rate = prompt(
+    "Rate:",
+    item.Rate || 0
+  );
+
+  if(rate === null) return;
+
+  const paid = prompt(
+    "Paid:",
+    sale.Paid || 0
+  );
+
+  if(paid === null) return;
+
+  if(Number(qty) <= 0){
+    return alert("Quantity অবশ্যই 0-এর বেশি হতে হবে");
+  }
+
+  await api("updateSale", {
+    ID: sale.ID,
+    customerId: customerId,
+    productId: productId,
+    qty: Number(qty),
+    rate: Number(rate),
+    paid: Number(paid) || 0
+  });
+
+  alert("Sale updated successfully");
+
+  await loadAll();
+}
+
+
+async function deleteSale(id){
+
+  if(!confirm(
+    "এই Sale Delete করতে চান?\n\nDelete করলে Stock পুনরায় হিসাব হবে।"
+  )) return;
+
+  try{
+
+    await api("deleteSale", {id});
+
+    alert("Sale deleted successfully");
+
+    await loadAll();
+
+  }catch(e){
+    // Error already shown by api()
+  }
+}
